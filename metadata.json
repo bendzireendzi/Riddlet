@@ -1,0 +1,6 @@
+{
+  "name": "Zagonetka Dana - Dnevni 60s Izazov",
+  "description": "Dnevna mini igra: riješi 7 zagonetki u 60 sekundi bez prijave. Otkrij svoj postotak uspjeha, gradi streak i vježbaj mozak svaki dan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
