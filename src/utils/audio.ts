@@ -38,7 +38,37 @@ class SoundManager {
     return this.isMuted;
   }
 
+  public haptic(type: 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error' = 'light') {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      try {
+        switch (type) {
+          case 'light':
+            navigator.vibrate(12);
+            break;
+          case 'medium':
+            navigator.vibrate(25);
+            break;
+          case 'heavy':
+            navigator.vibrate(45);
+            break;
+          case 'success':
+            navigator.vibrate([25, 30, 45]);
+            break;
+          case 'warning':
+            navigator.vibrate([35, 30, 25]);
+            break;
+          case 'error':
+            navigator.vibrate([50, 40, 60]);
+            break;
+        }
+      } catch {
+        // Safe fail
+      }
+    }
+  }
+
   public playClick() {
+    this.haptic('light');
     if (this.isMuted) return;
     try {
       this.initCtx();
@@ -62,6 +92,7 @@ class SoundManager {
   }
 
   public playCorrect() {
+    this.haptic('success');
     if (this.isMuted) return;
     try {
       this.initCtx();
@@ -90,7 +121,63 @@ class SoundManager {
     }
   }
 
+  public playCombo(comboCount: number) {
+    this.haptic('success');
+    if (this.isMuted) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+      const baseFreq = 523.25 * Math.pow(1.12, Math.min(6, comboCount));
+      const freqs = [baseFreq, baseFreq * 1.25, baseFreq * 1.5];
+
+      freqs.forEach((freq, idx) => {
+        const osc = this.ctx!.createOscillator();
+        const gain = this.ctx!.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.05);
+
+        gain.gain.setValueAtTime(0, now + idx * 0.05);
+        gain.gain.linearRampToValueAtTime(0.14, now + idx * 0.05 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.05 + 0.25);
+
+        osc.connect(gain);
+        gain.connect(this.ctx!.destination);
+        osc.start(now + idx * 0.05);
+        osc.stop(now + idx * 0.05 + 0.28);
+      });
+    } catch {
+      // Ignored
+    }
+  }
+
+  public playTypoAccept() {
+    this.haptic('medium');
+    if (this.isMuted) return;
+    try {
+      this.initCtx();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+      const freqs = [587.33, 880]; // D5, A5
+      freqs.forEach((f, i) => {
+        const osc = this.ctx!.createOscillator();
+        const gain = this.ctx!.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(f, now + i * 0.06);
+        gain.gain.setValueAtTime(0.1, now + i * 0.06);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.06 + 0.2);
+        osc.connect(gain);
+        gain.connect(this.ctx!.destination);
+        osc.start(now + i * 0.06);
+        osc.stop(now + i * 0.06 + 0.22);
+      });
+    } catch {
+      // Ignored
+    }
+  }
+
   public playWrong() {
+    this.haptic('error');
     if (this.isMuted) return;
     try {
       this.initCtx();
@@ -116,6 +203,7 @@ class SoundManager {
   }
 
   public playTick() {
+    this.haptic('light');
     if (this.isMuted) return;
     try {
       this.initCtx();
@@ -140,6 +228,7 @@ class SoundManager {
   }
 
   public playFanfare() {
+    this.haptic('success');
     if (this.isMuted) return;
     try {
       this.initCtx();

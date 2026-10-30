@@ -34,15 +34,15 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="sticky top-0 z-30 border-b border-stone-200/90 bg-[#F7F5F0]/95 backdrop-blur-md">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4 md:gap-8">
         
-        {/* Zone 1: Brand Wordmark (one line, text element) */}
+        {/* Zone 1: Brand Wordmark */}
         <button
           onClick={onGoHome}
           className="flex items-center gap-2.5 text-left text-lg sm:text-xl font-bold tracking-tight text-stone-900 hover:text-[#5A6F32] transition-colors whitespace-nowrap shrink-0 group focus:outline-none cursor-pointer"
         >
-          <span className="w-8 h-8 rounded-lg bg-[#6B7F38]/15 border border-[#6B7F38]/30 text-[#4D5E2B] flex items-center justify-center font-black text-sm group-hover:scale-105 transition-transform">
-            7r
+          <span className="w-8 h-8 rounded-xl bg-[#6B7F38] text-white flex items-center justify-center font-black text-sm shadow-xs group-hover:scale-105 transition-transform">
+            R
           </span>
-          <span>Daily Riddle</span>
+          <span className="font-extrabold text-stone-900 tracking-tight">Riddlet</span>
         </button>
 
         {/* Zone 2: Navigation Links (single line, clean typography) */}

@@ -22,7 +22,8 @@ import { ResultSummary } from './components/ResultSummary';
 import { ReviewModal } from './components/ReviewModal';
 import { StatsModal } from './components/StatsModal';
 import { RulesModal } from './components/RulesModal';
-import { Play, RotateCcw, Timer, Flame, Trophy, Sparkles, CheckCircle2, Keyboard } from 'lucide-react';
+import { InstallGuideModal } from './components/InstallGuideModal';
+import { Play, RotateCcw, Timer, Flame, Trophy, Sparkles, CheckCircle2, Keyboard, Smartphone } from 'lucide-react';
 
 const MASCOT_IMAGE = '/src/assets/images/sage_owl_beige_1793196415514.jpg';
 const BANNER_IMAGE = '/src/assets/images/brain_hourglass_beige_1793196415815.jpg';
@@ -45,7 +46,9 @@ export default function App() {
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [isRulesOpen, setIsRulesOpen] = useState(false);
+  const [isInstallGuideOpen, setIsInstallGuideOpen] = useState(false);
   const [isMuted, setIsMuted] = useState(() => sound.getMuted());
+  const [comboCount, setComboCount] = useState<number>(0);
 
   // Timers and refs
   const timerIntervalRef = useRef<number | null>(null);
@@ -141,11 +144,13 @@ export default function App() {
     setCurrentIndex(0);
     setPlayerAnswers([]);
     setSecondsLeft(60);
+    setComboCount(0);
     setPhase('READY');
   };
 
   const startGamePlay = () => {
     setSecondsLeft(60);
+    setComboCount(0);
     gameStartTimeRef.current = Date.now();
     questionStartTimeRef.current = Date.now();
     setPhase('PLAYING');
@@ -157,6 +162,12 @@ export default function App() {
 
     const currentRiddle = riddles[currentIndex];
     const timeSpent = Math.min(60, (Date.now() - questionStartTimeRef.current) / 1000);
+
+    const nextCombo = comboCount + 1;
+    setComboCount(nextCombo);
+    if (nextCombo >= 2) {
+      sound.playCombo(nextCombo);
+    }
 
     const answerRecord: PlayerAnswer = {
       riddleId: currentRiddle.id,
@@ -180,6 +191,7 @@ export default function App() {
   const handleSkip = () => {
     if (phase !== 'PLAYING' || riddles.length <= 1) return;
     sound.playClick();
+    setComboCount(0);
     
     const currentRiddle = riddles[currentIndex];
     const newRiddles = [...riddles];
@@ -193,6 +205,7 @@ export default function App() {
   // Called when 60s expires on the current riddle
   const handleRiddleTimeout = () => {
     sound.playWrong();
+    setComboCount(0);
     const currentRiddle = riddles[currentIndex];
     const timeoutRecord: PlayerAnswer = {
       riddleId: currentRiddle.id,
@@ -334,12 +347,14 @@ export default function App() {
               totalQuestions={riddles.length}
               answeredCount={playerAnswers.length}
               correctCount={correctCountSoFar}
+              answersHistory={playerAnswers.map((a) => a.isCorrect)}
             />
 
             <GameCard
               riddle={currentRiddle}
               currentIndex={currentIndex}
               totalQuestions={riddles.length}
+              comboCount={comboCount}
               onAnswerCorrect={handleAnswerCorrect}
               onSkip={handleSkip}
               canSkip={riddles.length > 1}
@@ -378,14 +393,23 @@ export default function App() {
                 <div className="md:col-span-7 space-y-5 text-left">
                   
                   {/* Clean unboxed metadata separator */}
-                  <div className="flex items-center gap-2 text-xs font-bold text-[#4D5E2B]">
+                  <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-[#4D5E2B]">
                     <span>Daily Challenge #{todayDayNumber}</span>
                     <span aria-hidden="true" className="text-stone-300">·</span>
                     <span>7 Riddles</span>
                     <span aria-hidden="true" className="text-stone-300">·</span>
                     <span>60s Per Riddle</span>
                     <span aria-hidden="true" className="text-stone-300">·</span>
-                    <span>Type Answers</span>
+                    <button
+                      onClick={() => {
+                        sound.playClick();
+                        setIsInstallGuideOpen(true);
+                      }}
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#4D5E2B] bg-[#EEF2E6] hover:bg-[#E2EACD] px-2.5 py-0.5 rounded-full border border-[#C6D3B6] transition-colors cursor-pointer"
+                    >
+                      <Smartphone className="w-3 h-3 text-[#6B7F38]" />
+                      <span>Phone App</span>
+                    </button>
                   </div>
 
                   <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-stone-900 tracking-tight leading-[1.15]">
@@ -565,6 +589,17 @@ export default function App() {
             <button
               onClick={() => {
                 sound.playClick();
+                setIsInstallGuideOpen(true);
+              }}
+              className="text-[#4D5E2B] font-bold hover:underline transition-colors cursor-pointer flex items-center gap-1"
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>Install app on phone</span>
+            </button>
+            <span aria-hidden="true" className="text-stone-300">·</span>
+            <button
+              onClick={() => {
+                sound.playClick();
                 setIsRulesOpen(true);
               }}
               className="hover:text-stone-800 transition-colors cursor-pointer"
@@ -605,6 +640,11 @@ export default function App() {
       <RulesModal
         isOpen={isRulesOpen}
         onClose={() => setIsRulesOpen(false)}
+      />
+
+      <InstallGuideModal
+        isOpen={isInstallGuideOpen}
+        onClose={() => setIsInstallGuideOpen(false)}
       />
 
     </div>

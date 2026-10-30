@@ -36,12 +36,24 @@ export const ResultSummary: React.FC<ResultSummaryProps> = ({
     if (result.score >= 4) {
       sound.playFanfare();
       try {
+        // Multi-stage confetti celebration
         confetti({
-          particleCount: 75,
-          spread: 60,
+          particleCount: 60,
+          spread: 70,
           origin: { y: 0.6 },
-          colors: ['#6B7F38', '#8A9E58', '#059669', '#3B82F6'],
+          colors: ['#6B7F38', '#8A9E58', '#4D5E2B', '#EAB308'],
         });
+
+        if (result.score === 7) {
+          setTimeout(() => {
+            confetti({
+              particleCount: 100,
+              spread: 100,
+              origin: { y: 0.4 },
+              colors: ['#6B7F38', '#EAB308', '#3B82F6', '#10B981'],
+            });
+          }, 350);
+        }
       } catch {
         // Fallback
       }
@@ -68,22 +80,39 @@ export const ResultSummary: React.FC<ResultSummaryProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  const handleShare = () => {
+  const handleShare = async () => {
     sound.playClick();
     const answerSquares = result.answers
       .map((a) => (a.isCorrect ? '🟩' : '🟥'))
       .join('');
 
     const textToShare = 
-`🧠 Daily Riddle #${result.dayNumber} (${result.date})
+`🧠 Riddlet Daily #${result.dayNumber}
 🎯 Score: ${result.score}/7 solved
 ⏱️ Time: ${result.timeUsed.toFixed(1)}s (60s per riddle)
-🏆 Better than ${percentileData.percentile}% of players!
+🏆 Better than ${percentileData.percentile}% of players today!
 🔥 Streak: ${stats.currentStreak} ${stats.currentStreak === 1 ? 'day' : 'days'}
 ${answerSquares}
 
-Play free with no login required: ${window.location.origin}`;
+Play here (no login needed): https://bendzireendzi.github.io/Riddlet/`;
 
+    // Try native Web Share API first (opens WhatsApp, Viber, Messages directly on phone!)
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: `Riddlet #${result.dayNumber} - ${result.score}/7 Solved`,
+          text: textToShare,
+          url: 'https://bendzireendzi.github.io/Riddlet/',
+        });
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+        return;
+      } catch (err: unknown) {
+        if ((err as Error)?.name === 'AbortError') return; // User closed share sheet
+      }
+    }
+
+    // Fallback to clipboard
     if (navigator.clipboard) {
       navigator.clipboard.writeText(textToShare).then(() => {
         setCopied(true);

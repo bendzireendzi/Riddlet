@@ -13,6 +13,7 @@ interface DailyTimerBarProps {
   totalQuestions: number;
   answeredCount: number;
   correctCount: number;
+  answersHistory?: boolean[];
 }
 
 export const DailyTimerBar: React.FC<DailyTimerBarProps> = ({
@@ -22,6 +23,7 @@ export const DailyTimerBar: React.FC<DailyTimerBarProps> = ({
   totalQuestions,
   answeredCount,
   correctCount,
+  answersHistory = [],
 }) => {
   const percentage = Math.max(0, Math.min(100, (secondsLeft / totalSeconds) * 100));
 
@@ -49,18 +51,22 @@ export const DailyTimerBar: React.FC<DailyTimerBarProps> = ({
         <div className="flex items-center gap-1.5 sm:gap-2">
           {Array.from({ length: totalQuestions }).map((_, idx) => {
             const isCurrent = idx === currentIndex;
-            const isCompleted = idx < answeredCount;
+            const isAnswered = idx < answeredCount;
+            const isCorrect = answersHistory[idx] === true;
+
             return (
               <div
                 key={idx}
-                className={`h-2.5 rounded-full transition-all duration-200 ${
+                className={`h-2.5 rounded-full transition-all duration-300 ${
                   isCurrent
-                    ? 'w-7 sm:w-9 bg-[#6B7F38] ring-2 ring-[#6B7F38]/30'
-                    : isCompleted
-                    ? 'w-3.5 sm:w-4 bg-[#8A9E58]'
+                    ? 'w-7 sm:w-9 bg-[#6B7F38] ring-2 ring-[#6B7F38]/30 animate-pulse'
+                    : isAnswered
+                    ? isCorrect
+                      ? 'w-3.5 sm:w-4 bg-[#6B7F38]'
+                      : 'w-3.5 sm:w-4 bg-rose-400'
                     : 'w-3.5 sm:w-4 bg-stone-200'
                 }`}
-                title={`Riddle ${idx + 1}`}
+                title={`Riddle ${idx + 1}: ${isAnswered ? (isCorrect ? 'Correct' : 'Missed') : isCurrent ? 'Current' : 'Upcoming'}`}
               />
             );
           })}
@@ -90,10 +96,10 @@ export const DailyTimerBar: React.FC<DailyTimerBarProps> = ({
       {/* Meta indicators row */}
       <div className="flex items-center justify-between mt-2.5 text-xs text-stone-500 font-medium">
         <span className="tabular-nums">
-          Score: <strong className="text-[#4D5E2B] font-bold">{correctCount}</strong> of {totalQuestions} correct
+          Score: <strong className="text-[#4D5E2B] font-bold">{correctCount}</strong> of {totalQuestions} solved
         </span>
         <span>
-          Riddle timer: <strong>60s per question</strong>
+          Timer: <strong>60s per riddle</strong>
         </span>
       </div>
 
