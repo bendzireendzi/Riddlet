@@ -7,7 +7,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Riddle } from '../types/game';
 import { checkAnswerFuzzy } from '../utils/fuzzyMatch';
 import { sound } from '../utils/audio';
-import { Check, ArrowRight, SkipForward, Sparkles, Lightbulb, HelpCircle } from 'lucide-react';
+import { Check, ArrowRight, SkipForward, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface GameCardProps {
@@ -32,7 +32,6 @@ export const GameCard: React.FC<GameCardProps> = ({
   const [inputValue, setInputValue] = useState('');
   const [status, setStatus] = useState<'idle' | 'correct' | 'wrong'>('idle');
   const [feedbackMsg, setFeedbackMsg] = useState<string>('');
-  const [hintLevel, setHintLevel] = useState<number>(0); // 0 = none, 1 = length dashes, 2 = letters revealed
   const [isShaking, setIsShaking] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -41,51 +40,11 @@ export const GameCard: React.FC<GameCardProps> = ({
     setInputValue('');
     setStatus('idle');
     setFeedbackMsg('');
-    setHintLevel(0);
     setIsShaking(false);
     setTimeout(() => {
       inputRef.current?.focus();
     }, 50);
   }, [riddle.id]);
-
-  // Clean canonical answer words for display
-  const cleanAnswer = riddle.answer.trim();
-  const answerWords = cleanAnswer.split(' ');
-
-  const getWordMask = () => {
-    if (hintLevel === 0) return null;
-    return answerWords.map((word, wIdx) => {
-      const letters = word.split('');
-      return (
-        <span key={wIdx} className="inline-flex gap-1 items-center mx-1 font-mono tracking-wider">
-          {letters.map((char, cIdx) => {
-            const isLetter = /[a-zA-Z0-9]/.test(char);
-            if (!isLetter) return <span key={cIdx} className="text-stone-400 font-bold">{char}</span>;
-            
-            // Level 2 reveals first and last letter
-            const isRevealed = hintLevel >= 2 && (cIdx === 0 || cIdx === letters.length - 1);
-            return (
-              <span
-                key={cIdx}
-                className={`w-6 h-7 sm:w-7 sm:h-8 flex items-center justify-center rounded-lg border text-xs sm:text-sm font-bold uppercase transition-all ${
-                  isRevealed
-                    ? 'bg-[#EEF2E6] border-[#C6D3B6] text-[#3D4B20] animate-pop'
-                    : 'bg-stone-100 border-stone-300 text-stone-400'
-                }`}
-              >
-                {isRevealed ? char : '•'}
-              </span>
-            );
-          })}
-        </span>
-      );
-    });
-  };
-
-  const handleRevealHint = () => {
-    sound.playClick();
-    setHintLevel((prev) => Math.min(2, prev + 1));
-  };
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -125,7 +84,7 @@ export const GameCard: React.FC<GameCardProps> = ({
       setStatus('wrong');
       setIsShaking(true);
       sound.playWrong();
-      setFeedbackMsg('Not quite! Check spelling or use a clue below.');
+      setFeedbackMsg('Not quite! Check your spelling and try again.');
       
       setTimeout(() => setIsShaking(false), 380);
 
@@ -167,19 +126,6 @@ export const GameCard: React.FC<GameCardProps> = ({
       <h2 className="text-xl sm:text-2xl font-bold text-stone-900 leading-snug tracking-tight mb-6 min-h-[68px] flex items-center">
         {riddle.question}
       </h2>
-
-      {/* Word Shape / Letters Clue Box (if activated) */}
-      {hintLevel > 0 && (
-        <div className="mb-5 p-3.5 bg-stone-50 border border-stone-200/80 rounded-2xl flex flex-col items-center justify-center gap-2 animate-pop">
-          <div className="text-[11px] font-semibold text-stone-500 uppercase tracking-wider flex items-center gap-1.5">
-            <Lightbulb className="w-3.5 h-3.5 text-[#6B7F38]" />
-            <span>Word clue ({answerWords.map((w) => w.length).join(', ')} letters):</span>
-          </div>
-          <div className="flex flex-wrap items-center justify-center gap-1">
-            {getWordMask()}
-          </div>
-        </div>
-      )}
 
       {/* Interactive Text Input Form */}
       <form onSubmit={handleSubmit} className="space-y-4 mb-5">
@@ -249,32 +195,20 @@ export const GameCard: React.FC<GameCardProps> = ({
         )}
       </form>
 
-      {/* Footer controls: Hint Button & Skip Button */}
-      <div className="flex items-center justify-between pt-3 border-t border-stone-100 text-xs text-stone-500">
-        {/* Hint Trigger */}
-        <button
-          type="button"
-          onClick={handleRevealHint}
-          disabled={status === 'correct' || hintLevel >= 2}
-          className="flex items-center gap-1.5 py-1.5 px-3 rounded-xl border border-stone-200 hover:border-[#6B7F38] hover:bg-[#EEF2E6]/60 text-stone-700 hover:text-[#3D4B20] text-xs font-semibold cursor-pointer transition-colors disabled:opacity-40"
-        >
-          <Lightbulb className="w-3.5 h-3.5 text-[#6B7F38]" />
-          <span>{hintLevel === 0 ? 'Need a clue?' : hintLevel === 1 ? 'Reveal letters' : 'Clue revealed'}</span>
-        </button>
-
-        {/* Skip button */}
-        {canSkip && onSkip && (
+      {/* Footer controls: Skip Button */}
+      {canSkip && onSkip && (
+        <div className="flex items-center justify-end pt-3 border-t border-stone-100 text-xs text-stone-500">
           <button
             type="button"
             onClick={onSkip}
             disabled={status === 'correct'}
-            className="flex items-center gap-1.5 ml-auto text-stone-500 hover:text-[#4D5E2B] transition-colors py-1.5 px-3 rounded-lg hover:bg-stone-100 text-xs font-semibold cursor-pointer"
+            className="flex items-center gap-1.5 text-stone-500 hover:text-[#4D5E2B] transition-colors py-1.5 px-3 rounded-lg hover:bg-stone-100 text-xs font-semibold cursor-pointer"
           >
             <span>Skip for now</span>
             <SkipForward className="w-3.5 h-3.5" />
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };
